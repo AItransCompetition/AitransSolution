@@ -5,12 +5,14 @@ import os
 import time
 import numpy as np
 import argparse
+from qoe import cal_single_block_qoe
 
 # the numbers that you can control
 numbers = 60
 server_ip = "127.0.0.1"
 port = "5555"
 
+# define parser
 parser = argparse.ArgumentParser()
 parser.add_argument('--ip', type=str, required=True, help="the ip of container_server_name that required")
 
@@ -26,6 +28,8 @@ parser.add_argument('--network', type=str, default="trace.txt", help="the networ
 
 parser.add_argument('--run_path', type=str, default="/home/aitrans-server/", help="the path of aitrans_server")
 
+
+# parse argument
 params                = parser.parse_args()
 server_ip             = params.ip
 port                  = params.port
@@ -35,6 +39,7 @@ container_client_name = params.client_name
 network_trace         = params.network
 docker_run_path       = params.run_path
 
+# prepare shell code
 client_run = '''
 #!/bin/bash
 cd {0}
@@ -61,6 +66,7 @@ with open("server_run.sh", "w")  as f:
 with open("client_run.sh", "w") as f:
     f.write(client_run)
 
+# run shell order
 order_list = [
     "chmod +x server_run.sh",
     "chmod +x client_run.sh",
@@ -95,7 +101,5 @@ os.system("sudo docker cp ./stop_server.sh " + container_server_name + ":%s" % (
 os.system("sudo docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
 os.system("sudo docker cp " + container_client_name + ":%sclient.log ." % (docker_run_path))
 
-sum = 0
-with open('client.log', 'r') as f:
-    
-    print(f.readline())
+print("cal qoe")
+print("qoe : ", cal_single_block_qoe("client.log", 0.9))

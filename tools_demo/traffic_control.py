@@ -60,7 +60,7 @@ def tc_easy_bandwith(**kwargs):
     latency = 100 if not kwargs['latency'] else float(kwargs['latency']) # bw*43.75
 
     # loss rate
-    loss_rate = 0 if not kwargs['loss_rate'] else float(kwargs['loss_rate'])
+    loss_rate = 0 if not kwargs['loss_rate'] else float(kwargs['loss_rate']) * 100
 
     os.system('tc qdisc add dev {0} root handle 1:0 tbf rate {1}mbit buffer {2} latency {3}ms'.format(
                 nic_name, bw, buffer, latency))
@@ -73,7 +73,7 @@ def tc_easy_bandwith(**kwargs):
     if kwargs['delay'] == None:
         delay_ms = random.random() * (mx_delay_ms - mn_delay_ms) + mn_delay_ms
     else:
-        delay_ms = float(kwargs['delay'])
+        delay_ms = float(kwargs['delay']) * 1000
         if delay_ms <= 0.000001:
             return
 
