@@ -1,6 +1,8 @@
+'''
+quick start : python3 main.py --ip {dtp_server ip} --server_name dtp_server --client_name dtp_client --network traces_1.txt
+'''
 import os
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mtick
+import time
 import numpy as np
 import argparse
 
@@ -22,6 +24,8 @@ parser.add_argument('--client_name', type=str, default="dtp_client", help="the c
 
 parser.add_argument('--network', type=str, default="trace.txt", help="the network trace file ")
 
+parser.add_argument('--run_path', type=str, default="/home/aitrans-server/", help="the path of aitrans_server")
+
 params                = parser.parse_args()
 server_ip             = params.ip
 port                  = params.port
@@ -29,33 +33,27 @@ numbers               = params.numbers
 container_server_name = params.server_name
 container_client_name = params.client_name
 network_trace         = params.network
-
-docker_run_path = "/aitrans-server/"
-
-compile_run = '''
-#!/bin/bash
-cd /aitrans-server/demo
-g++ -shared -fPIC solution.cxx -I include -o libsolution.so
-cp libsolution.so ../lib
-'''
+docker_run_path       = params.run_path
 
 client_run = '''
 #!/bin/bash
-./client --no-verify http://{0}:{1}
-'''.format(server_ip, port)
+cd {0}
+./client --no-verify http://{1}:{2}
+'''.format(docker_run_path, server_ip, port)
 
 '''
 todo : specify block trace
 '''
 server_run = '''
 #!/bin/bash
-cd /aitrans-server
-LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
-python3 traffic_control.py -load {2} &
-'''.format(server_ip, port, network_trace)
+cd {3}demo
+g++ -shared -fPIC solution.cxx -I include -o libsolution.so
+cp libsolution.so ../lib
 
-with open("compile_run.sh", "w") as f:
-    f.write(compile_run)
+cd {3}
+python3 traffic_control.py -load {2} &
+LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
+'''.format(server_ip, port, network_trace, docker_run_path)
 
 with open("server_run.sh", "w")  as f:
     f.write(server_run)
@@ -63,24 +61,41 @@ with open("server_run.sh", "w")  as f:
 with open("client_run.sh", "w") as f:
     f.write(client_run)
 
-os.system("sudo docker cp ./compile_run.sh " + container_server_name + ":" + docker_run_path)
-os.system("sudo docker cp ./server_run.sh " + container_server_name + ":" + docker_run_path)
-os.system("sudo docker cp ./client_run.sh " + container_client_name + ":" + docker_run_path)
-os.system("sudo docker exec -itd " + container_server_name + "  /bin/bash %sserver_run.sh" % (docker_run_path))
+order_list = [
+    "chmod +x server_run.sh",
+    "chmod +x client_run.sh",
+    "sudo docker cp ./traffic_control.py " + container_server_name + ":" + docker_run_path,
+    "sudo docker cp ./server_run.sh " + container_server_name + ":" + docker_run_path,
+    "sudo docker cp ./client_run.sh " + container_client_name + ":" + docker_run_path,
+    "sudo docker exec -it " + container_server_name + " nohup /bin/bash %sserver_run.sh" % (docker_run_path)
+]
+
+# os.system("sudo docker cp ./compile_run.sh " + container_server_name + ":" + docker_run_path)
+for idx, order in enumerate(order_list):
+    print(idx, " ", order)
+    os.system(order)
+
+time.sleep(1)
 os.system("sudo docker exec -it " + container_client_name + "  /bin/bash %sclient_run.sh" % (docker_run_path))
+time.sleep(5)
 os.system("sudo docker cp " + container_client_name + ":%sclient.log ." % (docker_run_path))
 
 stop_server = '''
 #!/bin/bash
-kill `lsof -i:{} | awk '/server/ {print$2}'`
-'''.format(port)
+cd %s
+kill `lsof -i:%s | awk '/server/ {print$2}'`
+python3 traffic_control.py --reset eth0
+''' % (docker_run_path, port)
 
 with open("stop_server.sh", "w")  as f:
     f.write(stop_server)
+
+print("stop server")
 os.system("sudo docker cp ./stop_server.sh " + container_server_name + ":%s" % (docker_run_path))
 os.system("sudo docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
+os.system("sudo docker cp " + container_client_name + ":%sclient.log ." % (docker_run_path))
 
 sum = 0
 with open('client.log', 'r') as f:
-    f.seek(0)
-    sum = int(os.popen('wc -l server.log').read().split()[0])
+    
+    print(f.readline())
