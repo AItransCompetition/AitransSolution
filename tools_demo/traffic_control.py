@@ -253,7 +253,7 @@ if __name__ == '__main__':
 
     # change bandwith and delay according file
     elif params['load_file']:
-        load_file(**params)
+        load_new_file(**params)
 
     elif params["reset"]:
         os.system('tc qdisc del dev {0} root'.format(params['reset']))
