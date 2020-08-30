@@ -1,7 +1,7 @@
 '''
 quick start : python3 main.py --ip {dtp_server ip} --server_name dtp_server --client_name dtp_client --network traces_1.txt
 '''
-import os
+import os, platform
 import time
 import numpy as np
 import argparse
@@ -39,12 +39,16 @@ container_client_name = params.client_name
 network_trace         = params.network
 docker_run_path       = params.run_path
 
+# judge system
+order_preffix = " " if platform.system() == "Windows" else "sudo "
+
 # prepare shell code
 client_run = '''
 #!/bin/bash
 cd {0}
+python3 traffic_control.py -load {3} > tc.log &
 ./client --no-verify http://{1}:{2}
-'''.format(docker_run_path, server_ip, port)
+'''.format(docker_run_path, server_ip, port, network_trace)
 
 '''
 todo : specify block trace
@@ -56,7 +60,7 @@ g++ -shared -fPIC solution.cxx -I include -o libsolution.so
 cp libsolution.so ../lib
 
 cd {3}
-python3 traffic_control.py -load {2} &
+python3 traffic_control.py -load {2} > tc.log &
 LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
 '''.format(server_ip, port, network_trace, docker_run_path)
 
@@ -70,10 +74,11 @@ with open("client_run.sh", "w") as f:
 order_list = [
     "chmod +x server_run.sh",
     "chmod +x client_run.sh",
-    "sudo docker cp ./traffic_control.py " + container_server_name + ":" + docker_run_path,
-    "sudo docker cp ./server_run.sh " + container_server_name + ":" + docker_run_path,
-    "sudo docker cp ./client_run.sh " + container_client_name + ":" + docker_run_path,
-    "sudo docker exec -it " + container_server_name + " nohup /bin/bash %sserver_run.sh" % (docker_run_path)
+    order_preffix + " docker cp ./traffic_control.py " + container_server_name + ":" + docker_run_path,
+    order_preffix + " docker cp ./traffic_control.py " + container_client_name + ":" + docker_run_path,
+    order_preffix + " docker cp ./server_run.sh " + container_server_name + ":" + docker_run_path,
+    order_preffix + " docker cp ./client_run.sh " + container_client_name + ":" + docker_run_path,
+    order_preffix + " docker exec -it " + container_server_name + " nohup /bin/bash %sserver_run.sh" % (docker_run_path)
 ]
 
 # os.system("sudo docker cp ./compile_run.sh " + container_server_name + ":" + docker_run_path)
@@ -91,15 +96,16 @@ stop_server = '''
 cd %s
 kill `lsof -i:%s | awk '/server/ {print$2}'`
 python3 traffic_control.py --reset eth0
+kill -9 | ps -ef | grep python | awk '{print $1}'
 ''' % (docker_run_path, port)
 
 with open("stop_server.sh", "w")  as f:
     f.write(stop_server)
 
 print("stop server")
-os.system("sudo docker cp ./stop_server.sh " + container_server_name + ":%s" % (docker_run_path))
-os.system("sudo docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
-os.system("sudo docker cp " + container_client_name + ":%sclient.log ." % (docker_run_path))
+os.system(order_preffix + " docker cp ./stop_server.sh " + container_server_name + ":%s" % (docker_run_path))
+os.system(order_preffix + " docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
+os.system(order_preffix + " docker cp " + container_client_name + ":%sclient.log ." % (docker_run_path))
 
 print("cal qoe")
 print("qoe : ", cal_single_block_qoe("client.log", 0.9))

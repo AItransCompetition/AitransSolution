@@ -61,6 +61,7 @@ def tc_easy_bandwith(**kwargs):
 
     # loss rate
     loss_rate = 0 if not kwargs['loss_rate'] else float(kwargs['loss_rate']) * 100
+    loss_parser = "" if loss_rate <= 0.0000001 else "loss {0}%".format(loss_rate)
 
     os.system('tc qdisc add dev {0} root handle 1:0 tbf rate {1}mbit buffer {2} latency {3}ms'.format(
                 nic_name, bw, buffer, latency))
@@ -77,7 +78,7 @@ def tc_easy_bandwith(**kwargs):
         if delay_ms <= 0.000001:
             return
 
-    os.system('tc qdisc add dev {0} parent 1:1 handle 10: netem delay {1}ms loss {2}%'.format(nic_name, delay_ms, loss_rate))
+    os.system('tc qdisc add dev {0} parent 1:1 handle 10: netem delay {1}ms {2}'.format(nic_name, delay_ms, loss_parser))
     print("changed nic {0}, delay_time to {1}ms".format(nic_name, delay_ms))
 
 
