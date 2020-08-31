@@ -13,7 +13,7 @@ $ g++ -c solution.cxx -I include
 
 - docker镜像下载
 
-  > docker pull aitrans/aitrans2
+  > docker pull aitrans/aitrans2:latest
 
 - 创建服务端
 
@@ -45,4 +45,4 @@ $ g++ -c solution.cxx -I include
 
   > 在选手替换完自己的代码以及上传数据集后，为了简化编译运行过程，我们提供了一件运行脚本，选手可以前往github下载[一键运行脚本](https://github.com/TOPbuaa/AitransSolution/tree/master).
   >
-  > python3 main.py --ip {server ip} --server_name {server container name} --client_name {client container name} --network {network trace path}
+  > python3 main.py --ip {server ip} --server_name {server container name} --client_name {client container name} --network {network trace path} --block {block trace path}
