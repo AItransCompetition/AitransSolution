@@ -19,17 +19,15 @@ $ g++ -c solution.cxx -I include
 
   > docker run --privileged -dit --name {server container name} aitrans/aitrans2:latest
 
+- 创建客户端
+
+  > docker run --privileged -dit --name {client container name} aitrans/aitrans2:latest
+
 - 查看服务端信息
 
   > 进入服务端：docker attach {container name}
   >
   > 查看服务端的ip：ifconfig eth0 | grep inet
-  >
-  > 退出但不关闭容器：Ctrl+P+Q
-
-- 创建客户端
-
-  > docker run --privileged -dit --name {client container name} aitrans/aitrans2:latest
 
 - 文件系统
 
@@ -39,7 +37,12 @@ $ g++ -c solution.cxx -I include
   >
   > 镜像提供了可以编译运行的代码，并置于demo 目录下，选手应在服务端将自己的代码与"demo/solution.cxx"进行替换。
   >
-  > 选手应将自己训练所需要的数据集上传至服务端指定位置
+  > 选手应将自己训练所需要的数据集上传至服务端指定位置。
+  >
+  > 退出但不关闭容器：Ctrl+P+Q（如若不行，请参考后面退出-重启容器的方法）。
+  > 无法正常使用上述命令，则键入：exit，退出容器，后在命令行中重启容器。
+  > 
+  > docker attach {server container name}
 
 - 一键运行
 

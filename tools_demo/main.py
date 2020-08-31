@@ -43,7 +43,7 @@ block_trace           = params.block
 docker_run_path       = params.run_path
 
 # judge system
-order_preffix = " " if platform.system() == "Windows" else "sudo "
+order_preffix = " " if "windows" in platform.system().lower() else "sudo "
 
 # init trace
 if block_trace:
