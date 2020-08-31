@@ -11,6 +11,7 @@
 import random
 import time, os, sys
 import argparse
+import datetime
 
 help_info = '''
     Examples :
@@ -39,6 +40,10 @@ help_info = '''
             You can specify "--delay 10" to set delay to 10ms.
     '''
 
+def get_now_time():
+    return datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+
 def tc_easy_bandwith(**kwargs):
 
     nic_name = kwargs['nic']
@@ -65,7 +70,7 @@ def tc_easy_bandwith(**kwargs):
 
     os.system('tc qdisc add dev {0} root handle 1:0 tbf rate {1}mbit buffer {2} latency {3}ms'.format(
                 nic_name, bw, buffer, latency))
-    print("changed nic {0}, bandwith to {1}mbit".format(nic_name, bw))
+    print("Time : {2}, changed nic {0}, bandwith to {1}mbit".format(nic_name, bw, get_now_time()))
 
     # delay
     mx_delay_ms = float(kwargs['max_delay'])
@@ -79,7 +84,7 @@ def tc_easy_bandwith(**kwargs):
             return
 
     os.system('tc qdisc add dev {0} parent 1:1 handle 10: netem delay {1}ms {2}'.format(nic_name, delay_ms, loss_parser))
-    print("changed nic {0}, delay_time to {1}ms".format(nic_name, delay_ms))
+    print("Time : {2}, changed nic {0}, delay_time to {1}ms".format(nic_name, delay_ms, get_now_time()))
 
 
 def load_file(**kwargs):
@@ -233,6 +238,10 @@ def init_argparse():
                         metavar="ETHERNET",
                         help="You can get eth0's all queue discplines.")
 
+    parser.add_argument("-aft", "--after",
+                        metavar="ETHERNET",
+                        help="run after time")
+
     parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0')
 
 
@@ -246,6 +255,10 @@ if __name__ == '__main__':
     pre_time = time.time()
     params=parser.parse_args()
     params=vars(params)
+
+    # for aitrans
+    if params['after']:
+        time.sleep(float(params['after']))
 
     # change once
     if params['change_once']:

@@ -24,7 +24,9 @@ parser.add_argument('--server_name', type=str, default="dtp_server", help="the c
 
 parser.add_argument('--client_name', type=str, default="dtp_client", help="the container_client_name ")
 
-parser.add_argument('--network', type=str, default="trace.txt", help="the network trace file ")
+parser.add_argument('--network', type=str, default=None, help="the network trace file ")
+
+parser.add_argument('--block', type=str, default=None, help="the block trace file ")
 
 parser.add_argument('--run_path', type=str, default="/home/aitrans-server/", help="the path of aitrans_server")
 
@@ -37,32 +39,37 @@ numbers               = params.numbers
 container_server_name = params.server_name
 container_client_name = params.client_name
 network_trace         = params.network
+block_trace           = params.block
 docker_run_path       = params.run_path
 
 # judge system
 order_preffix = " " if platform.system() == "Windows" else "sudo "
 
+# init trace
+if block_trace:
+    os.system(order_preffix + "docker cp " + block_trace + ' ' + container_server_name + ":%strace/aitrans_block.txt" % (docker_run_path))
+if network_trace:
+    os.system(order_preffix + "docker cp " + network_trace + ' ' + container_server_name + ":%strace/traces.txt" % (docker_run_path))
+    os.system(order_preffix + "docker cp " + network_trace + ' ' + container_client_name + ":%strace/traces.txt" % (docker_run_path))
+
 # prepare shell code
 client_run = '''
 #!/bin/bash
 cd {0}
-python3 traffic_control.py -load {3} > tc.log &
+python3 traffic_control.py -load trace/traces.txt > tc.log &
 ./client --no-verify http://{1}:{2}
-'''.format(docker_run_path, server_ip, port, network_trace)
+'''.format(docker_run_path, server_ip, port)
 
-'''
-todo : specify block trace
-'''
 server_run = '''
 #!/bin/bash
-cd {3}demo
+cd {2}demo
 g++ -shared -fPIC solution.cxx -I include -o libsolution.so
 cp libsolution.so ../lib
 
-cd {3}
-python3 traffic_control.py -load {2} > tc.log &
+cd {2}
+python3 traffic_control.py -aft 1 -load trace/traces.txt > tc.log &
 LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
-'''.format(server_ip, port, network_trace, docker_run_path)
+'''.format(server_ip, port, docker_run_path)
 
 with open("server_run.sh", "w")  as f:
     f.write(server_run)
@@ -78,7 +85,7 @@ order_list = [
     order_preffix + " docker cp ./traffic_control.py " + container_client_name + ":" + docker_run_path,
     order_preffix + " docker cp ./server_run.sh " + container_server_name + ":" + docker_run_path,
     order_preffix + " docker cp ./client_run.sh " + container_client_name + ":" + docker_run_path,
-    order_preffix + " docker exec -it " + container_server_name + " nohup /bin/bash %sserver_run.sh" % (docker_run_path)
+    order_preffix + " docker exec -itd " + container_server_name + " nohup /bin/bash %sserver_run.sh" % (docker_run_path)
 ]
 
 # os.system("sudo docker cp ./compile_run.sh " + container_server_name + ":" + docker_run_path)
@@ -87,6 +94,7 @@ for idx, order in enumerate(order_list):
     os.system(order)
 
 time.sleep(1)
+print("run client")
 os.system("sudo docker exec -it " + container_client_name + "  /bin/bash %sclient_run.sh" % (docker_run_path))
 time.sleep(5)
 os.system("sudo docker cp " + container_client_name + ":%sclient.log ." % (docker_run_path))
@@ -96,7 +104,7 @@ stop_server = '''
 cd %s
 kill `lsof -i:%s | awk '/server/ {print$2}'`
 python3 traffic_control.py --reset eth0
-kill -9 | ps -ef | grep python | awk '{print $1}'
+kill `ps -ef | grep python | awk '/traffic_control/ {print $2}'`
 ''' % (docker_run_path, port)
 
 with open("stop_server.sh", "w")  as f:
