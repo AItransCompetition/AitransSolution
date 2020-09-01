@@ -48,6 +48,11 @@ solution_files        = params.solution_files
 order_preffix = " " if "windows" in platform.system().lower() else "sudo "
 tc_preffix = "" if network_trace else "# "
 
+# move shell scripts to tmp directory
+tmp_shell_preffix = "./tmp"
+if not os.path.exists(tmp_shell_preffix):
+    os.mkdir(tmp_shell_preffix)
+
 # init trace
 if block_trace:
     os.system(order_preffix + "docker cp " + block_trace + ' ' + container_server_name + ":%strace/aitrans_block.txt" % (docker_run_path))
@@ -77,20 +82,20 @@ cd {2}
 LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
 '''.format(server_ip, port, docker_run_path, tc_preffix)
 
-with open("server_run.sh", "w")  as f:
+with open(tmp_shell_preffix + "/server_run.sh", "w")  as f:
     f.write(server_run)
 
-with open("client_run.sh", "w") as f:
+with open(tmp_shell_preffix + "/client_run.sh", "w") as f:
     f.write(client_run)
 
 # run shell order
 order_list = [
-    "chmod +x server_run.sh",
-    "chmod +x client_run.sh",
+    "chmod +x %s/server_run.sh" %(tmp_shell_preffix),
+    "chmod +x %s/client_run.sh" %(tmp_shell_preffix),
     order_preffix + " docker cp ./traffic_control.py " + container_server_name + ":" + docker_run_path,
     order_preffix + " docker cp ./traffic_control.py " + container_client_name + ":" + docker_run_path,
-    order_preffix + " docker cp ./server_run.sh " + container_server_name + ":" + docker_run_path,
-    order_preffix + " docker cp ./client_run.sh " + container_client_name + ":" + docker_run_path,
+    order_preffix + " docker cp %s/server_run.sh " %(tmp_shell_preffix) + container_server_name + ":" + docker_run_path,
+    order_preffix + " docker cp %s/client_run.sh " %(tmp_shell_preffix) + container_client_name + ":" + docker_run_path,
     order_preffix + " docker exec -itd " + container_server_name + " nohup /bin/bash %sserver_run.sh" % (docker_run_path)
 ]
 
@@ -113,12 +118,12 @@ kill `lsof -i:{1} | awk '/server/ {{print$2}}'`
 {2} python3 traffic_control.py --reset eth0
 '''.format(docker_run_path, port, tc_preffix)
 
-with open("stop_server.sh", "w")  as f:
+with open(tmp_shell_preffix + "/stop_server.sh", "w")  as f:
     f.write(stop_server)
 
 print("stop server")
-os.system("chmod +x stop_server.sh")
-os.system(order_preffix + " docker cp ./stop_server.sh " + container_server_name + ":%s" % (docker_run_path))
+os.system("chmod +x %s/stop_server.sh" %(tmp_shell_preffix))
+os.system(order_preffix + " docker cp %s/stop_server.sh " %(tmp_shell_preffix) + container_server_name + ":%s" % (docker_run_path))
 os.system(order_preffix + " docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
 os.system(order_preffix + " docker cp " + container_client_name + ":%sclient.log ." % (docker_run_path))
 
