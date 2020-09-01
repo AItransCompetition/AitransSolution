@@ -13,7 +13,7 @@ void SolutionInit()
     your_parameter["ack_nums"] = 0;
 }
 
-uint64_t SolutionSelectPacket(struct Blocks blocks, uint64_t current_time)
+uint64_t SolutionSelectBlock(struct Blocks blocks, uint64_t current_time)
 {
     /************** START CODE HERE ***************/
     // return the id of block you want to send, for example:
@@ -45,13 +45,13 @@ uint64_t SolutionSelectPacket(struct Blocks blocks, uint64_t current_time)
     /************** END CODE HERE ***************/
 }
 
-void SolutionCcTrigger(AckInfo *ack_infos, uint64_t ack_num, uint64_t *congestion_window, uint64_t *pacing_rate)
+void SolutionCcTrigger(CcInfo *cc_infos, uint64_t ack_num, uint64_t *congestion_window, uint64_t *pacing_rate)
 {
     /************** START CODE HERE ***************/
     uint64_t cwnd = *congestion_window;
     for (uint64_t i = 0; i < ack_num; i++)
     {
-        char *event_type = ack_infos[i].event_type;
+        char *event_type = cc_infos[i].event_type;
         // fprintf(stderr, "event_type=%s\n", event_type);
         const uint64_t max_packet_size = 1350;
         const uint64_t init_ssthresh = 2 * max_packet_size;
