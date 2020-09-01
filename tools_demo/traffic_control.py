@@ -61,7 +61,8 @@ def tc_easy_bandwith(**kwargs):
         bw = float(kwargs['bandwith'])
 
     # for ubuntu 16.04, the latest buffer to reach rate = rate / HZ
-    buffer = bw*11000 if not kwargs['buffer'] else float(kwargs['buffer'])
+    # buffer = bw*11000 if not kwargs['buffer'] else float(kwargs['buffer'])
+    buffer = 1350*20 if not kwargs['buffer'] else float(kwargs['buffer'])
     latency = 100 if not kwargs['latency'] else float(kwargs['latency']) # bw*43.75
 
     # loss rate
@@ -229,6 +230,9 @@ def init_argparse():
     parser.add_argument("-lat", "--latency",
                         type=float,
                         help="The value of latency you want to change in tbf")
+    parser.add_argument("-loss", "--loss_rate",
+                        type=float,
+                        help="The value of loss_rate you want to change in netem")
 
     parser.add_argument("-r", "--reset",
                         metavar="ETHERNET",
