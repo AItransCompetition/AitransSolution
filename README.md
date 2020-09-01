@@ -49,3 +49,29 @@ $ g++ -c solution.cxx -I include
   > 在选手替换完自己的代码以及上传数据集后，为了简化编译运行过程，我们提供了一件运行脚本，选手可以前往github下载[一键运行脚本](https://github.com/TOPbuaa/AitransSolution/tree/master).
   >
   > python3 main.py --ip {server ip} --server_name {server container name} --client_name {client container name} --network {network trace path} --block {block trace path}
+
+# Docker 常用命令总结
+
+- 推荐[菜鸟教程](https://www.runoob.com/docker/docker-tutorial.html)
+
+- 查看本地已下载的镜像
+
+  > docker images
+
+- 查看本地所有已创建的容器状态
+
+  > docker ps -a
+
+- 启动容器
+
+  > docker start {container name}
+
+- 进入容器
+
+  > docker attach {container name}
+
+- 拷贝本地文件进入容器指定目录
+
+  > docker cp {local source files path} {container name}:{destination path in docker}
+  > 
+  > 同理，拷贝容器文件到本地：docker cp {container name}:{source path in docker} {local destination files path} 
