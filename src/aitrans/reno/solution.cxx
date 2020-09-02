@@ -13,7 +13,7 @@ void SolutionInit()
     your_parameter["ack_nums"] = 0;
 }
 
-uint64_t SolutionSelectBlock(struct Blocks blocks, uint64_t current_time)
+uint64_t SolutionSelectBlock(Block* blocks, uint64_t block_num, uint64_t current_time)
 {
     /************** START CODE HERE ***************/
     // return the id of block you want to send, for example:
@@ -25,33 +25,33 @@ uint64_t SolutionSelectBlock(struct Blocks blocks, uint64_t current_time)
 
     your_parameter["last_time"] = current_time;
     uint64_t best_block_index = -1;
-    for (int i = 0; i < blocks.block_num; i++)
+    for (int i = 0; i < block_num; i++)
     {
         if (best_block_index == -1)
             best_block_index = i;
         else
         {
-            double best_block_create_time = blocks.blocks_create_time[best_block_index];
-            double packet_block_create_time = blocks.blocks_create_time[i];
+            double best_block_create_time = blocks[best_block_index].block_create_time;
+            double packet_block_create_time = blocks[i].block_create_time;
 
-            if (current_time - best_block_create_time >= blocks.blocks_deadline[best_block_index] ||
+            if (current_time - best_block_create_time >= blocks[best_block_index].block_deadline ||
                 best_block_create_time > packet_block_create_time ||
-                (current_time - best_block_create_time) * blocks.blocks_deadline[best_block_index] >
-                    (current_time - packet_block_create_time) * blocks.blocks_deadline[i])
+                (current_time - best_block_create_time) * blocks[best_block_index].block_deadline >
+                    (current_time - packet_block_create_time) * blocks[i].block_deadline)
                 best_block_index = i;
         }
     }
-    return blocks.blocks_id[best_block_index];
+    return blocks[best_block_index].block_id;
     /************** END CODE HERE ***************/
 }
 
-void SolutionCcTrigger(CcInfo *cc_infos, uint64_t ack_num, uint64_t *congestion_window, uint64_t *pacing_rate)
+void SolutionCcTrigger(CcInfo* cc_infos, uint64_t cc_num, uint64_t *congestion_window, uint64_t *pacing_rate)
 {
     /************** START CODE HERE ***************/
     uint64_t cwnd = *congestion_window;
-    for (uint64_t i = 0; i < ack_num; i++)
+    for (uint64_t i = 0; i < cc_num; i++)
     {
-        char *event_type = cc_infos[i].event_type;
+        char event_type = cc_infos[i].event_type;
         // fprintf(stderr, "event_type=%s\n", event_type);
         const uint64_t max_packet_size = 1350;
         const uint64_t init_ssthresh = 2 * max_packet_size;
@@ -60,13 +60,13 @@ void SolutionCcTrigger(CcInfo *cc_infos, uint64_t ack_num, uint64_t *congestion_
         // return new cwnd, for example:
         uint64_t ssthresh = your_parameter["ssthresh"];
 
-        if (event_type[11] == 'D')
+        if (event_type == 'D')
         { // EVENT_TYPE_DROP
             your_parameter["cur_state"] = 2;
             your_parameter["ack_nums"] = 0;
         }
 
-        if (event_type[11] == 'F')
+        if (event_type == 'F')
         { // EVENT_TYPE_FINISHED
             your_parameter["ack_nums"] += max_packet_size;
 
