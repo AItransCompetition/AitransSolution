@@ -1,1 +1,0 @@
-# 参照官网发布的[初赛网络训练集](https://www.aitrans.online/static/dataset/%E9%A2%84%E8%B5%9B%E9%98%B6%E6%AE%B5%E8%AE%AD%E7%BB%83%E9%9B%86.zip)

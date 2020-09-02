@@ -16,25 +16,10 @@ double get_number_res_from_order(char* order) {
     // get cmd output
     memset(buf, 0, sizeof(buf));
     fgets(buf, sizeof(buf)-1, fp);
-    cout << "buf : " << buf << endl;
-    // parse double number
-    int decimal_nums = -1;
-    for(int i = 0;i < sizeof(buf); i ++) {
-        if (buf[i] >= '0' && buf[i] <= '9') {
-            ret = ret*10 + (buf[i] - '0');
-            if (decimal_nums > -1)
-                decimal_nums ++;
-        }
-        else if (buf[i] == '.') {
-            decimal_nums = 0;
-        }
-        else 
-            break;
-    }
 
-    while(decimal_nums -- > 0)
-        ret /= 10;
-    cout << "ret : " << ret << endl;
+    // parse double number
+    ret = atof(buf);
+
     pclose(fp);
     return ret;
 }
@@ -49,7 +34,7 @@ void SolutionInit(){
     system("python3 ./demo/hello_python3.py 0");
 
     cout << "python result : " << get_number_res_from_order("python3 ./demo/hello_python3.py 1 1 999") << endl;
-    
+
     cout << "python result : " << get_number_res_from_order("python3 ./demo/hello_python3.py 2 my_model.pkl") << endl;
     cout << "over init" << endl;
 }
