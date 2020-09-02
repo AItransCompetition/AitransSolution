@@ -52,7 +52,7 @@
 
 # Docker 常用命令总结
 
-- 推荐[菜鸟教程](https://www.runoob.com/docker/docker-tutorial.html)
+(未接触过docker的选手，可阅读入门教程：[菜鸟教程](https://www.runoob.com/docker/docker-tutorial.html))
 
 - 查看本地已下载的镜像
 
