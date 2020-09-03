@@ -55,7 +55,7 @@ if not os.path.exists(tmp_shell_preffix):
 
 # init trace
 if block_trace:
-    os.system(order_preffix + "docker cp " + block_trace + ' ' + container_server_name + ":%strace/aitrans_block.txt" % (docker_run_path))
+    os.system(order_preffix + "docker cp " + block_trace + ' ' + container_server_name + ":%strace/block_trace/aitrans_block.txt" % (docker_run_path))
 if network_trace:
     os.system(order_preffix + "docker cp " + network_trace + ' ' + container_server_name + ":%strace/traces.txt" % (docker_run_path))
     os.system(order_preffix + "docker cp " + network_trace + ' ' + container_client_name + ":%strace/traces.txt" % (docker_run_path))
