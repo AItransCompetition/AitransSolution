@@ -51,8 +51,11 @@ def tc_easy_bandwith(**kwargs):
     mx_bw = float(kwargs['max_bandwith'])
     mn_bw = float(kwargs['min_bandwith'])
 
-    # del old qdisc
-    os.system('tc qdisc del dev {0} root'.format(nic_name))
+    op_mode = 'change'
+    if 'first' in kwargs and kwargs['first']:
+        # del old qdisc
+        os.system('tc qdisc del dev {0} root'.format(nic_name))
+        op_mode = 'add'
 
     if kwargs['bandwith'] == None:
         # generate bandwith in [mn_bd, mx_bd)
@@ -60,18 +63,25 @@ def tc_easy_bandwith(**kwargs):
     else:
         bw = float(kwargs['bandwith'])
 
+    # tbf
     # for ubuntu 16.04, the latest buffer to reach rate = rate / HZ
     # buffer = bw*11000 if not kwargs['buffer'] else float(kwargs['buffer'])
-    buffer = 1350*20 if not kwargs['buffer'] else float(kwargs['buffer'])
-    latency = 100 if not kwargs['latency'] else float(kwargs['latency']) # bw*43.75
+    # buffer = 1350*20 if not kwargs['buffer'] else float(kwargs['buffer'])
+    # latency = 100 if not kwargs['latency'] else float(kwargs['latency']) # bw*43.75
 
     # loss rate
-    loss_rate = 0 if not kwargs['loss_rate'] else float(kwargs['loss_rate']) * 100
-    loss_parser = "" if loss_rate <= 0.0000001 else "loss {0}%".format(loss_rate)
+    loss_rate = 0 if not kwargs['loss_rate'] else float(kwargs['loss_rate'])
+    loss_parser = "" if loss_rate <= 0.000001 else "loss {0}%".format(loss_rate)
 
-    os.system('tc qdisc add dev {0} root handle 1:0 tbf rate {1}mbit buffer {2} latency {3}ms'.format(
-                nic_name, bw, buffer, latency))
-    print("Time : {2}, changed nic {0}, bandwith to {1}mbit".format(nic_name, bw, get_now_time()))
+    # os.system('tc qdisc {4} dev {0} root handle 1:0 tbf rate {1}mbit buffer {2} latency {3}ms'.format(
+                # nic_name, bw, buffer, latency, op_mode))
+    # htb
+    if kwargs['first']:
+        os.system("tc qdisc add dev {0} root handle 1: htb default 11".format(nic_name))
+    os.system("tc class {0} dev eth0 parent 1: classid 1:11 htb rate {1}mbit ceil {1}mbit".format(op_mode, bw))
+    if kwargs['first']:
+        os.system("tc filter add dev eth0 protocol ip parent 1:0 prio 1 u32 match ip dport 0 0x0000 flowid 1:11")
+    print("Time : {2}, {3} nic {0}, bandwith to {1}mbit".format(nic_name, bw, get_now_time(), op_mode))
 
     # delay
     mx_delay_ms = float(kwargs['max_delay'])
@@ -84,8 +94,8 @@ def tc_easy_bandwith(**kwargs):
         if delay_ms <= 0.000001:
             return
 
-    os.system('tc qdisc add dev {0} parent 1:1 handle 10: netem delay {1}ms {2}'.format(nic_name, delay_ms, loss_parser))
-    print("Time : {2}, changed nic {0}, delay_time to {1}ms".format(nic_name, delay_ms, get_now_time()))
+    os.system('tc qdisc {3} dev {0} parent 1:11 handle 10: netem delay {1}ms {2}'.format(nic_name, delay_ms, loss_parser, op_mode))
+    print("Time : {2}, {3} nic {0}, delay_time to {1}ms".format(nic_name, delay_ms, get_now_time(), op_mode))
 
 
 def load_file(**kwargs):
@@ -136,8 +146,10 @@ def load_new_file(**kwargs):
 
     try:
         for idx, item in enumerate(info_list):
-            kwargs['bandwith'] = item[1]
-            kwargs['loss_rate'] = item[2]
+            # MB to Mbit
+            kwargs['bandwith'] = float(item[1]) * 8
+            # to pencentage
+            kwargs['loss_rate'] = float(item[2]) * 100
             kwargs['delay'] = item[3]
             pre_time = time.time()
 
@@ -145,7 +157,7 @@ def load_new_file(**kwargs):
                 sleep_sec = (float(item[0]) - float(info_list[idx-1][0])) - (time.time() - pre_time)
                 if sleep_sec > 0:
                     time.sleep(sleep_sec)
-
+            kwargs['first'] = False if idx else True
             tc_easy_bandwith(**kwargs)
     except Exception as e:
         print("Please check file %s content is right!" % file_path)
@@ -259,6 +271,7 @@ if __name__ == '__main__':
     pre_time = time.time()
     params=parser.parse_args()
     params=vars(params)
+    params['first'] = True
 
     # for aitrans
     if params['after']:
@@ -281,6 +294,7 @@ if __name__ == '__main__':
 
     # change per internal
     elif params['internal']:
+        fir = True
         while True:
             if time.time()-pre_time >= params['internal']:
                 pre_time=time.time()
@@ -288,7 +302,9 @@ if __name__ == '__main__':
                 print("time {0}".format(pre_time))
                 if params['oper'] == 'bw_delay':
                     tc_easy_bandwith(**params)
-
+                if fir:
+                    fir = False
+                    params['first'] = False
                 time.sleep(params['internal'])
     else:
         parser.print_help()
