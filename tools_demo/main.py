@@ -53,6 +53,11 @@ tmp_shell_preffix = "./tmp"
 if not os.path.exists(tmp_shell_preffix):
     os.mkdir(tmp_shell_preffix)
 
+# move logs to log diectory
+logs_preffix = "./logs"
+if not os.path.exists(logs_preffix):
+    os.mkdir(logs_preffix)
+
 # init trace
 if block_trace:
     os.system(order_preffix + "docker cp " + block_trace + ' ' + container_server_name + ":%strace/block_trace/aitrans_block.txt" % (docker_run_path))
@@ -74,7 +79,7 @@ cd {0}
 server_run = '''
 #!/bin/bash
 cd {2}demo
-g++ -shared -fPIC solution.cxx -I include -o libsolution.so
+g++ -shared -fPIC solution.cxx -I include -o libsolution.so > compile.log 2>&1
 cp libsolution.so ../lib
 
 cd {2}
@@ -125,7 +130,12 @@ print("stop server")
 # os.system("chmod +x %s/stop_server.sh" %(tmp_shell_preffix))
 os.system(order_preffix + " docker cp %s/stop_server.sh " %(tmp_shell_preffix) + container_server_name + ":%s" % (docker_run_path))
 os.system(order_preffix + " docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
-os.system(order_preffix + " docker cp " + container_client_name + ":%sclient.log ." % (docker_run_path))
+# move logs
+os.system(order_preffix + " docker cp " + container_client_name + ":%sclient.log %s/." % (docker_run_path, logs_preffix))
+os.system(order_preffix + " docker cp " + container_client_name + ":%stc.log %s/client_tc.log" % (docker_run_path, logs_preffix))
+os.system(order_preffix + " docker cp " + container_server_name + ":%slog/server_aitrans.log %s/." % (docker_run_path, logs_preffix))
+os.system(order_preffix + " docker cp " + container_server_name + ":%stc.log %s/server_tc.log" % (docker_run_path, logs_preffix))
+os.system(order_preffix + " docker cp " + container_server_name + ":%sdemo/compile.log %s/compile.log" % (docker_run_path, logs_preffix))
 
 # cal qoe
 print("qoe : ", cal_single_block_qoe("client.log", 0.9))
