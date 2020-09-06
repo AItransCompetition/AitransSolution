@@ -23,7 +23,7 @@ def cal_single_block_qoe(block_file, a):
     qoe = 0
     tmp = [3, 2, 1]
     for block in satisfied_blocks:
-        qoe += a * tmp[(int(block[3]))] + (1 - a)
+        qoe += a * tmp[(int(block[3]))] / 3 + (1 - a)
     return qoe
 
 def cal_player_qoe(a):
