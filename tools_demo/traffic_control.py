@@ -159,6 +159,7 @@ def load_new_file(**kwargs):
                     time.sleep(sleep_sec)
             kwargs['first'] = False if idx else True
             tc_easy_bandwith(**kwargs)
+            sys.stdout.flush()
     except Exception as e:
         print("Please check file %s content is right!" % file_path)
         print(e)

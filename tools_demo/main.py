@@ -1,7 +1,7 @@
 '''
 quick start : python3 main.py --ip {dtp_server ip} --server_name dtp_server --client_name dtp_client --network traces_1.txt
 '''
-import os, platform
+import os, platform, json
 import time
 import numpy as np
 import argparse
@@ -14,15 +14,15 @@ port = "5555"
 
 # define parser
 parser = argparse.ArgumentParser()
-parser.add_argument('--ip', type=str, required=True, help="the ip of container_server_name that required")
+parser.add_argument('--ip', type=str, required=False, help="the ip of container_server_name that required")
 
 parser.add_argument('--port', type=str, default="5555",help="the port of dtp_server that required,default is 5555, and you can randomly choose")
 
 parser.add_argument('--numbers', type=int, default=60, help="the numbers of blocks that you can control")
 
-parser.add_argument('--server_name', type=str, default="dtp_server", help="the container_server_name ")
+parser.add_argument('--server_name', type=str, required=True, default="dtp_server", help="the container_server_name ")
 
-parser.add_argument('--client_name', type=str, default="dtp_client", help="the container_client_name ")
+parser.add_argument('--client_name', type=str, required=True, default="dtp_client", help="the container_client_name ")
 
 parser.add_argument('--network', type=str, default=None, help="the network trace file ")
 
@@ -47,6 +47,7 @@ solution_files        = params.solution_files
 # judge system
 order_preffix = " " if "windows" in platform.system().lower() else "sudo "
 tc_preffix = "" if network_trace else "# "
+cur_path = os.getcwd() + '/'
 
 # move shell scripts to tmp directory
 tmp_shell_preffix = "./tmp"
@@ -57,6 +58,20 @@ if not os.path.exists(tmp_shell_preffix):
 logs_preffix = "./logs"
 if not os.path.exists(logs_preffix):
     os.mkdir(logs_preffix)
+
+# check whether local file path is right
+if block_trace and not os.path.exists(block_trace):
+    raise ValueError("no such block trace in '%s'" % (cur_path + block_trace))
+if network_trace and not os.path.exists(network_trace):
+    raise ValueError("no such network trace in '%s'" % (cur_path + network_trace))
+if solution_files and not os.path.exists(solution_files):
+    raise ValueError("no such solution_files in '%s'" % (cur_path + solution_files))
+
+# get server ip
+if not server_ip:
+    out = os.popen("docker inspect %s" % (container_server_name)).read()
+    out_dt = json.loads(out)
+    server_ip = out_dt[0]["NetworkSettings"]["IPAddress"] 
 
 # init trace
 if block_trace:
@@ -71,6 +86,7 @@ if solution_files:
 client_run = '''
 #!/bin/bash
 cd {0}
+rm client.log
 {3} python3 traffic_control.py -load trace/traces.txt > tc.log 2>&1 &
 ./client --no-verify http://{1}:{2}
 {3} python3 traffic_control.py --reset eth0
@@ -79,11 +95,13 @@ cd {0}
 server_run = '''
 #!/bin/bash
 cd {2}demo
+rm libsolution.so ../lib/libsolution.so
 g++ -shared -fPIC solution.cxx -I include -o libsolution.so > compile.log 2>&1
 cp libsolution.so ../lib
 
 cd {2}
-{3} python3 traffic_control.py -aft 1 -load trace/traces.txt > tc.log 2>&1 &
+rm log/server_aitrans.log 
+{3} python3 traffic_control.py -aft 0.5 -load trace/traces.txt > tc.log 2>&1 &
 LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
 '''.format(server_ip, port, docker_run_path, tc_preffix)
 
