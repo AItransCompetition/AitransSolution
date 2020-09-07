@@ -5,7 +5,7 @@
 
 #include "solution.hxx"
 
-void SolutionInit()
+void SolutionInit(uint64_t *init_congestion_window, uint64_t *init_pacing_rate)
 {
     your_parameter["max_packet_size"] = 1350;
     your_parameter["init_ssthresh"] = 2 * your_parameter["max_packet_size"];
@@ -35,7 +35,7 @@ void SolutionInit()
     std::cout << "ok\n";
 }
 
-uint64_t SolutionSelectBlock(Block *blocks, uint64_t block_num, uint64_t current_time)
+uint64_t SolutionSelectBlock(Block* blocks, uint64_t block_num, uint64_t next_packet_id, uint64_t current_time)
 {
     /************** START CODE HERE ***************/
     // return the id of block you want to send, for example:

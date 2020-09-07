@@ -92,7 +92,7 @@ if solution_files:
 client_run = '''
 #!/bin/bash
 cd {0}
-rm client.log
+rm client.log > tmp.log 2>&1
 {3} python3 traffic_control.py -load trace/traces.txt > tc.log 2>&1 &
 ./client --no-verify http://{1}:{2}
 {3} python3 traffic_control.py --reset eth0
@@ -155,10 +155,11 @@ os.system(order_preffix + " docker cp %s/stop_server.sh " %(tmp_shell_preffix) +
 os.system(order_preffix + " docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
 # move logs
 os.system(order_preffix + " docker cp " + container_client_name + ":%sclient.log %s/." % (docker_run_path, logs_preffix))
-os.system(order_preffix + " docker cp " + container_client_name + ":%stc.log %s/client_tc.log" % (docker_run_path, logs_preffix))
 os.system(order_preffix + " docker cp " + container_server_name + ":%slog/server_aitrans.log %s/." % (docker_run_path, logs_preffix))
-os.system(order_preffix + " docker cp " + container_server_name + ":%stc.log %s/server_tc.log" % (docker_run_path, logs_preffix))
 os.system(order_preffix + " docker cp " + container_server_name + ":%sdemo/compile.log %s/compile.log" % (docker_run_path, logs_preffix))
+if network_trace:
+    os.system(order_preffix + " docker cp " + container_client_name + ":%stc.log %s/client_tc.log" % (docker_run_path, logs_preffix))
+    os.system(order_preffix + " docker cp " + container_server_name + ":%stc.log %s/server_tc.log" % (docker_run_path, logs_preffix))
 
 # cal qoe
 print("qoe : ", cal_single_block_qoe("%s/client.log" % (logs_preffix), 0.9))
