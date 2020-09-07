@@ -64,8 +64,14 @@ if block_trace and not os.path.exists(block_trace):
     raise ValueError("no such block trace in '%s'" % (cur_path + block_trace))
 if network_trace and not os.path.exists(network_trace):
     raise ValueError("no such network trace in '%s'" % (cur_path + network_trace))
-if solution_files and not os.path.exists(solution_files):
-    raise ValueError("no such solution_files in '%s'" % (cur_path + solution_files))
+if solution_files:
+    if not os.path.exists(solution_files):
+        raise ValueError("no such solution_files in '%s'" % (cur_path + solution_files))
+    tmp = os.listdir(solution_files)
+    if not "solution.cxx" in tmp:
+        raise ValueError("There is no solution.cxx in your solution path : %s" % (cur_path + solution_files))
+    if not "solution.hxx" in tmp:
+        raise ValueError("There is no solution.hxx in your solution path : %s" % (cur_path + solution_files))
 
 # get server ip
 if not server_ip:
@@ -131,7 +137,6 @@ time.sleep(1)
 print("run client")
 os.system(order_preffix + " docker exec -it " + container_client_name + "  /bin/bash %sclient_run.sh" % (docker_run_path))
 time.sleep(1)
-os.system(order_preffix + " docker cp " + container_client_name + ":%sclient.log ." % (docker_run_path))
 
 stop_server = '''
 #!/bin/bash
@@ -156,4 +161,4 @@ os.system(order_preffix + " docker cp " + container_server_name + ":%stc.log %s/
 os.system(order_preffix + " docker cp " + container_server_name + ":%sdemo/compile.log %s/compile.log" % (docker_run_path, logs_preffix))
 
 # cal qoe
-print("qoe : ", cal_single_block_qoe("client.log", 0.9))
+print("qoe : ", cal_single_block_qoe("%s/client.log" % (logs_preffix), 0.9))
