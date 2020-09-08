@@ -111,11 +111,17 @@ rm libsolution.so ../lib/libsolution.so
 g++ -shared -fPIC solution.cxx -I include -o libsolution.so > compile.log 2>&1
 cp libsolution.so ../lib
 
+# check port
+a=`lsof -i:{4} | awk '/server/ {{print$2}}'`
+if [ $a > 0 ]; then
+    kill a
+fi
+
 cd {2}
 rm log/server_aitrans.log 
 {3} python3 traffic_control.py -aft 0.5 -load trace/traces.txt > tc.log 2>&1 &
 LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
-'''.format(server_ip, port, docker_run_path, tc_preffix)
+'''.format(server_ip, port, docker_run_path, tc_preffix, port)
 
 with open(tmp_shell_preffix + "/server_run.sh", "w", newline='\n')  as f:
     f.write(server_run)
