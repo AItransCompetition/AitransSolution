@@ -1,26 +1,30 @@
 
 # 输入
 
-| 变量名            | 含义                                     | 初赛对应量        |
-| ----------------- | ---------------------------------------- | ----------------- |
-| blocks            | 当前可发的block组成的信息                | packet_queue      |
-| block_num         | blocks链表长度                           | len(packet_queue) |
-| current_time      | 当前时间（ms）                           | cur_time          |
-| cc_infos          | 当前时刻还未处理的拥塞控制相关的一些信息 |                   |
-| cc_num            | cc_infos链表的长度                       |                   |
-| pacing_rate       | 发送速率（bit /s）                       | send_rate         |
-| congestion_window | 拥塞窗口大小（Bytes）                    | cwnd              |
+| 变量名                 | 含义                                     | 初赛对应量        |
+| ---------------------- | ---------------------------------------- | ----------------- |
+| init_congestion_window | 初始拥塞窗口大小                         | init -- cwnd      |
+| init_pacing_rate       | 初始发送速率                             | Init -- send_rate |
+| blocks                 | 当前可发的block组成的信息                | packet_queue      |
+| block_num              | blocks链表长度                           | len(packet_queue) |
+| next_packet_id         | 会分配给当前决策结果的包的ID             |                   |
+| current_time           | 当前时间（ms）                           | cur_time          |
+| cc_infos               | 当前时刻还未处理的拥塞控制相关的一些信息 |                   |
+| cc_num                 | cc_infos链表的长度                       |                   |
+| pacing_rate            | 发送速率（bit /s）                       | send_rate         |
+| congestion_window      | 拥塞窗口大小（Bytes）                    | cwnd              |
 
 ## 输入-blocks
 
 
-| 变量名            | 含义                 | 初赛对应量                |
-| ----------------- | -------------------- | ------------------------- |
-| block_id          | 当前block的ID        | block_info -- Block_id    |
-| block_deadline    | deadline（ms）       | block_info -- Deadline    |
-| block_priority    | 优先级               | block_info -- Priority    |
-| block_create_time | 创建时间（ms）       | block_info -- Create_time |
-| block_size        | block总大小（Bytes） | block_info -- Size        |
+| 变量名            | 含义                       | 初赛对应量                |
+| ----------------- | -------------------------- | ------------------------- |
+| block_id          | 当前block的ID              | block_info -- Block_id    |
+| block_deadline    | deadline（ms）             | block_info -- Deadline    |
+| block_priority    | 优先级                     | block_info -- Priority    |
+| block_create_time | 创建时间（ms）             | block_info -- Create_time |
+| block_size        | block总大小（Bytes）       | block_info -- Size        |
+| remaining_size    | 该block的剩余大小（Bytes） |                           |
 
 ## 输入-cc_infos
 
@@ -29,6 +33,8 @@
 | event_type      | 取值'D'和'F'，分别表示丢包事件和ack包事件 | data -- event_type                                   |
 | rtt             | 往返时延（ms）                            | data -- packet_information_dict -- Latency           |
 | bytes_in_flight | 发送端已发出但未收到反馈的字节数（Bytes） | data -- packet_information_dict -- Extra -- inflight |
+| event_time      | 当前ack或lost事件具体发生的时间           |                                                      |
+| packet_id       | 当前ack或lost事件对应的包ID               |                                                      |
 
 ------
 

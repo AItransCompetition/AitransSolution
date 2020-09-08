@@ -32,6 +32,10 @@ parser.add_argument('--run_path', type=str, default="/home/aitrans-server/", hel
 
 parser.add_argument('--solution_files', type=str, default=None, help="the path of solution files")
 
+parser.add_argument('--run_times', type=int, default=1, help="The times that you want run repeatly")
+
+parser.add_argument('--enable_print', type=bool, default=True, help="Whether or not print information of processing")
+
 # parse argument
 params                = parser.parse_args()
 server_ip             = params.ip
@@ -43,6 +47,8 @@ network_trace         = params.network
 block_trace           = params.block
 docker_run_path       = params.run_path
 solution_files        = params.solution_files
+run_times             = params.run_times
+enable_print          = params.enable_print
 
 # judge system
 order_preffix = " " if "windows" in platform.system().lower() else "sudo "
@@ -119,8 +125,6 @@ with open(tmp_shell_preffix + "/client_run.sh", "w", newline='\n') as f:
 
 # run shell order
 order_list = [
-    # "chmod +x %s/server_run.sh" %(tmp_shell_preffix),
-    # "chmod +x %s/client_run.sh" %(tmp_shell_preffix),
     order_preffix + " docker cp ./traffic_control.py " + container_server_name + ":" + docker_run_path,
     order_preffix + " docker cp ./traffic_control.py " + container_client_name + ":" + docker_run_path,
     order_preffix + " docker cp %s/server_run.sh " %(tmp_shell_preffix) + container_server_name + ":" + docker_run_path,
@@ -128,38 +132,47 @@ order_list = [
     order_preffix + " docker exec -itd " + container_server_name + " nohup /bin/bash %sserver_run.sh" % (docker_run_path)
 ]
 
-# os.system("sudo docker cp ./compile_run.sh " + container_server_name + ":" + docker_run_path)
-for idx, order in enumerate(order_list):
-    print(idx, " ", order)
-    os.system(order)
+qoe_sample = []
+for run_seq in range(run_times):
+    print("The %d round :" % (run_seq))
+    # os.system("sudo docker cp ./compile_run.sh " + container_server_name + ":" + docker_run_path)
+    for idx, order in enumerate(order_list):
+        if enable_print:
+            print(idx, " ", order)
+        os.system(order)
 
-time.sleep(1)
-print("run client")
-os.system(order_preffix + " docker exec -it " + container_client_name + "  /bin/bash %sclient_run.sh" % (docker_run_path))
-time.sleep(1)
+    time.sleep(1)
+    if enable_print: print("run client")
+    os.system(order_preffix + " docker exec -it " + container_client_name + "  /bin/bash %sclient_run.sh" % (docker_run_path))
+    time.sleep(1)
 
-stop_server = '''
-#!/bin/bash
-cd {0}
-kill `lsof -i:{1} | awk '/server/ {{print$2}}'`
-{2} kill `ps -ef | grep python | awk '/traffic_control/ {{print $2}}'`
-{2} python3 traffic_control.py --reset eth0
-'''.format(docker_run_path, port, tc_preffix)
+    stop_server = '''
+    #!/bin/bash
+    cd {0}
+    kill `lsof -i:{1} | awk '/server/ {{print$2}}'`
+    {2} kill `ps -ef | grep python | awk '/traffic_control/ {{print $2}}'`
+    {2} python3 traffic_control.py --reset eth0
+    '''.format(docker_run_path, port, tc_preffix)
 
-with open(tmp_shell_preffix + "/stop_server.sh", "w", newline='\n')  as f:
-    f.write(stop_server)
+    with open(tmp_shell_preffix + "/stop_server.sh", "w", newline='\n')  as f:
+        f.write(stop_server)
 
-print("stop server")
-# os.system("chmod +x %s/stop_server.sh" %(tmp_shell_preffix))
-os.system(order_preffix + " docker cp %s/stop_server.sh " %(tmp_shell_preffix) + container_server_name + ":%s" % (docker_run_path))
-os.system(order_preffix + " docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
-# move logs
-os.system(order_preffix + " docker cp " + container_client_name + ":%sclient.log %s/." % (docker_run_path, logs_preffix))
-os.system(order_preffix + " docker cp " + container_server_name + ":%slog/server_aitrans.log %s/." % (docker_run_path, logs_preffix))
-os.system(order_preffix + " docker cp " + container_server_name + ":%sdemo/compile.log %s/compile.log" % (docker_run_path, logs_preffix))
-if network_trace:
-    os.system(order_preffix + " docker cp " + container_client_name + ":%stc.log %s/client_tc.log" % (docker_run_path, logs_preffix))
-    os.system(order_preffix + " docker cp " + container_server_name + ":%stc.log %s/server_tc.log" % (docker_run_path, logs_preffix))
+    if enable_print: print("stop server")
+    # os.system("chmod +x %s/stop_server.sh" %(tmp_shell_preffix))
+    os.system(order_preffix + " docker cp %s/stop_server.sh " %(tmp_shell_preffix) + container_server_name + ":%s" % (docker_run_path))
+    os.system(order_preffix + " docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
+    # move logs
+    os.system(order_preffix + " docker cp " + container_client_name + ":%sclient.log %s/." % (docker_run_path, logs_preffix))
+    os.system(order_preffix + " docker cp " + container_server_name + ":%slog/server_aitrans.log %s/." % (docker_run_path, logs_preffix))
+    os.system(order_preffix + " docker cp " + container_server_name + ":%sdemo/compile.log %s/compile.log" % (docker_run_path, logs_preffix))
+    if network_trace:
+        os.system(order_preffix + " docker cp " + container_client_name + ":%stc.log %s/client_tc.log" % (docker_run_path, logs_preffix))
+        os.system(order_preffix + " docker cp " + container_server_name + ":%stc.log %s/server_tc.log" % (docker_run_path, logs_preffix))
 
-# cal qoe
-print("qoe : ", cal_single_block_qoe("%s/client.log" % (logs_preffix), 0.9))
+    # cal qoe
+    now_qoe = cal_single_block_qoe("%s/client.log" % (logs_preffix), 0.9)
+    qoe_sample.append(now_qoe)
+    print("qoe : ", now_qoe)
+
+if run_times > 1:
+    print("qoe_sample : ", qoe_sample)
