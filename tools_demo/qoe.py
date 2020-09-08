@@ -19,7 +19,7 @@ def cal_single_block_qoe(block_file, a):
     lines[:] = lines[start : end]
     lines[:] = [line.strip() for line in lines]
     lines[:] = [list(map(float, line.split())) for line in lines]
-    satisfied_blocks = [line for line in lines if line[1] <= line[4]]
+    satisfied_blocks = [line for line in lines if len(line) == 5 and line[1] <= line[4]]
     qoe = 0
     tmp = [3, 2, 1]
     for block in satisfied_blocks:
