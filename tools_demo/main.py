@@ -114,7 +114,7 @@ cp libsolution.so ../lib
 # check port
 a=`lsof -i:{4} | awk '/server/ {{print$2}}'`
 if [ $a > 0 ]; then
-    kill a
+    kill -9 $a
 fi
 
 cd {2}
