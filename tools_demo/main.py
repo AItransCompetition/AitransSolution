@@ -119,7 +119,7 @@ fi
 
 cd {2}
 rm log/server_aitrans.log 
-{3} python3 traffic_control.py -aft 0.5 -load trace/traces.txt > tc.log 2>&1 &
+{3} python3 traffic_control.py -aft 0.1 -load trace/traces.txt > tc.log 2>&1 &
 LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
 '''.format(server_ip, port, docker_run_path, tc_preffix, port)
 
@@ -141,15 +141,21 @@ order_list = [
 qoe_sample = []
 for run_seq in range(run_times):
     print("The %d round :" % (run_seq))
-    # os.system("sudo docker cp ./compile_run.sh " + container_server_name + ":" + docker_run_path)
+
+    print("--restart docker--")
+    os.system("docker restart %s %s" % (container_server_name, container_client_name))
+    time.sleep(5)
+
     for idx, order in enumerate(order_list):
         if enable_print:
             print(idx, " ", order)
         os.system(order)
 
+    # ensure server established succussfully
     time.sleep(1)
     if enable_print: print("run client")
     os.system(order_preffix + " docker exec -it " + container_client_name + "  /bin/bash %sclient_run.sh" % (docker_run_path))
+    # ensure connection closed
     time.sleep(1)
 
     stop_server = '''
