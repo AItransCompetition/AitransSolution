@@ -50,6 +50,24 @@
   >
   > --run_times {number of running times} 需要重复运行的次数
 
+- log分析
+
+  > 执行完一件运行脚本后，服务端和客户端都会产生一些log输出，为了方便选手进行debug调试，一键运行脚本会自动把服务端和客户端的log输出全部拷贝的本地执行目录的logs目录下，具体内容如下：
+  >
+  > compile.log : 编译选手算法时产生的报错log，可以用于判断选手代码语法是否正确。
+  >
+  > server-aitrans.log ：服务端运行时输出的log，选手可以在solution.cxx文件中进行printf调试，在满足条件时，该输出结果也会一并显示在该文件中。
+  >
+  > client.log ：客户端运行时的log，会显示客户端所收到的所有block的完成信息，包括BlockID、bct 、BlockSize  、Priority  和Deadline，分别对应block id、block完成时间、block大小、优先级和deadline。
+  >
+  > server_tc.log : (指定network参数时才有效) 服务端读取网络trace后实际控制网络状态的情况。
+  >
+  > client_tc.log :  (指定network参数时才有效) 同server_tc.log 。
+
+- tmp目录
+
+  > 该目录下生成的是会放入服务端和客户端容器执行的shell脚本，选手可以主动将对应容器的脚本拷贝入容器后，在两端分别运行。
+
 # Docker 常用命令总结
 
 (未接触过docker的选手，可阅读入门教程：[菜鸟教程](https://www.runoob.com/docker/docker-tutorial.html))

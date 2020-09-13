@@ -139,7 +139,8 @@ order_list = [
 ]
 
 qoe_sample = []
-for run_seq in range(run_times):
+run_seq = 0
+while run_seq < run_times:
     print("The %d round :" % (run_seq))
 
     print("--restart docker--")
@@ -183,8 +184,13 @@ for run_seq in range(run_times):
 
     # cal qoe
     now_qoe = cal_single_block_qoe("%s/client.log" % (logs_preffix), 0.9)
+    with open("%s/client.log" % (logs_preffix), 'r') as f:
+        if len(f.readlines()) <= 5:
+            print("server run fail, begin restart!")
+            continue
     qoe_sample.append(now_qoe)
     print("qoe : ", now_qoe)
+    run_seq += 1
 
 if run_times > 1:
     print("qoe_sample : ", qoe_sample)
