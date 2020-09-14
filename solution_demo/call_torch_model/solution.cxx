@@ -29,7 +29,6 @@ void SolutionInit(uint64_t *init_congestion_window, uint64_t *init_pacing_rate)
     catch (const c10::Error &e)
     {
         std::cerr << "error loading the model\n";
-        return -1;
     }
 
     std::cout << "ok\n";
