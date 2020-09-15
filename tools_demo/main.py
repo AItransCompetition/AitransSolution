@@ -116,9 +116,15 @@ def prepare_shell_code():
 
     cd {2}
     rm log/server_aitrans.log 
-    {3} python3 traffic_control.py -aft 0.1 -load trace/traces.txt > tc.log 2>&1 &
+    
     LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
-    '''.format(server_ip, port, docker_run_path, tc_preffix, port, compile_preffix)
+    '''.format(server_ip, port, docker_run_path, '', port, compile_preffix)
+
+    server_tc = '''
+    #!/bin/bash
+    cd {0}
+    {1} python3 traffic_control.py -aft 0.1 -load trace/traces.txt > tc.log 2>&1 &
+    '''.format(docker_run_path, tc_preffix)
 
     with open(tmp_shell_preffix + "/server_run.sh", "w", newline='\n')  as f:
         f.write(server_run)
@@ -126,13 +132,17 @@ def prepare_shell_code():
     with open(tmp_shell_preffix + "/client_run.sh", "w", newline='\n') as f:
         f.write(client_run)
 
+    with open(tmp_shell_preffix + "/server_tc.sh", "w", newline='\n') as f:
+        f.write(server_tc)
+
 # run shell order
 order_list = [
     order_preffix + " docker cp ./traffic_control.py " + container_server_name + ":" + docker_run_path,
     order_preffix + " docker cp ./traffic_control.py " + container_client_name + ":" + docker_run_path,
     order_preffix + " docker cp %s/server_run.sh " %(tmp_shell_preffix) + container_server_name + ":" + docker_run_path,
+    order_preffix + " docker cp %s/server_tc.sh " %(tmp_shell_preffix) + container_server_name + ":" + docker_run_path,
     order_preffix + " docker cp %s/client_run.sh " %(tmp_shell_preffix) + container_client_name + ":" + docker_run_path,
-    order_preffix + " docker exec -itd " + container_server_name + " nohup /bin/bash %sserver_run.sh" % (docker_run_path)
+    order_preffix + " docker exec -itd " + container_server_name + " nohup /bin/bash %sserver_run.sh &" % (docker_run_path)
 ]
 
 qoe_sample = []
@@ -155,8 +165,9 @@ while run_seq < run_times:
         os.system(order)
 
     # ensure server established succussfully
-    time.sleep(3)
+    time.sleep(2)
     print("run client")
+    os.system(order_preffix + " docker exec -itd " + container_server_name + " nohup /bin/bash %sserver_tc.sh &" % (docker_run_path))
     os.system(order_preffix + " docker exec -it " + container_client_name + "  /bin/bash %sclient_run.sh" % (docker_run_path))
     # ensure connection closed
     time.sleep(1)
