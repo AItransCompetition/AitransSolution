@@ -155,8 +155,8 @@ while run_seq < run_times:
         os.system(order)
 
     # ensure server established succussfully
-    time.sleep(1)
-    if enable_print: print("run client")
+    time.sleep(3)
+    print("run client")
     os.system(order_preffix + " docker exec -it " + container_client_name + "  /bin/bash %sclient_run.sh" % (docker_run_path))
     # ensure connection closed
     time.sleep(1)
@@ -172,7 +172,7 @@ while run_seq < run_times:
     with open(tmp_shell_preffix + "/stop_server.sh", "w", newline='\n')  as f:
         f.write(stop_server)
 
-    if enable_print: print("stop server")
+    print("stop server")
     os.system(order_preffix + " docker cp %s/stop_server.sh " %(tmp_shell_preffix) + container_server_name + ":%s" % (docker_run_path))
     os.system(order_preffix + " docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
     # move logs
