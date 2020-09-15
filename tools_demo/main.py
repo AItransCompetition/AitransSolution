@@ -103,6 +103,9 @@ def prepare_shell_code():
 
     server_run = '''
     #!/bin/bash
+    cd {2}
+    {3} python3 traffic_control.py -aft 3.1 -load trace/traces.txt > tc.log 2>&1 &
+
     cd {2}demo
     {5} rm libsolution.so ../lib/libsolution.so
     {5} g++ -shared -fPIC solution.cxx -I include -o libsolution.so > compile.log 2>&1
@@ -116,7 +119,6 @@ def prepare_shell_code():
 
     cd {2}
     rm log/server_aitrans.log 
-    {3} python3 traffic_control.py -aft 0.1 -load trace/traces.txt > tc.log 2>&1 &
     LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
     '''.format(server_ip, port, docker_run_path, tc_preffix, port, compile_preffix)
 
