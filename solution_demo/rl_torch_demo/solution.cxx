@@ -109,7 +109,7 @@ void SolutionCcTrigger(CcInfo *cc_infos, uint64_t cc_num, uint64_t *congestion_w
     order.append(to_string(*pacing_rate));
     cout << order << endl;
     // make decision
-    *pacing_rate = get_number_res_from_order(order.data());
+    *pacing_rate = get_number_res_from_order((char *)order.data());
 
     // call torch model when submit model to system
     /*

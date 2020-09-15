@@ -91,39 +91,40 @@ if solution_files:
     os.system(order_preffix + "docker cp " + solution_files + ' ' + container_server_name + ":%sdemo/." % (docker_run_path))
 
 # prepare shell code
-client_run = '''
-#!/bin/bash
-cd {0}
-rm client.log > tmp.log 2>&1
-{3} python3 traffic_control.py -load trace/traces.txt > tc.log 2>&1 &
-./client --no-verify http://{1}:{2}
-{3} python3 traffic_control.py --reset eth0
-'''.format(docker_run_path, server_ip, port, tc_preffix)
+def prepare_shell_code():
+    client_run = '''
+    #!/bin/bash
+    cd {0}
+    rm client.log > tmp.log 2>&1
+    {3} python3 traffic_control.py -load trace/traces.txt > tc.log 2>&1 &
+    ./client --no-verify http://{1}:{2}
+    {3} python3 traffic_control.py --reset eth0
+    '''.format(docker_run_path, server_ip, port, tc_preffix)
 
-server_run = '''
-#!/bin/bash
-cd {2}demo
-{5} rm libsolution.so ../lib/libsolution.so
-{5} g++ -shared -fPIC solution.cxx -I include -o libsolution.so > compile.log 2>&1
-cp libsolution.so ../lib
+    server_run = '''
+    #!/bin/bash
+    cd {2}demo
+    {5} rm libsolution.so ../lib/libsolution.so
+    {5} g++ -shared -fPIC solution.cxx -I include -o libsolution.so > compile.log 2>&1
+    cp libsolution.so ../lib
 
-# check port
-a=`lsof -i:{4} | awk '/server/ {{print$2}}'`
-if [ $a > 0 ]; then
-    kill -9 $a
-fi
+    # check port
+    a=`lsof -i:{4} | awk '/server/ {{print$2}}'`
+    if [ $a > 0 ]; then
+        kill -9 $a
+    fi
 
-cd {2}
-rm log/server_aitrans.log 
-{3} python3 traffic_control.py -aft 0.1 -load trace/traces.txt > tc.log 2>&1 &
-LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
-'''.format(server_ip, port, docker_run_path, tc_preffix, port, compile_preffix)
+    cd {2}
+    rm log/server_aitrans.log 
+    {3} python3 traffic_control.py -aft 0.1 -load trace/traces.txt > tc.log 2>&1 &
+    LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
+    '''.format(server_ip, port, docker_run_path, tc_preffix, port, compile_preffix)
 
-with open(tmp_shell_preffix + "/server_run.sh", "w", newline='\n')  as f:
-    f.write(server_run)
+    with open(tmp_shell_preffix + "/server_run.sh", "w", newline='\n')  as f:
+        f.write(server_run)
 
-with open(tmp_shell_preffix + "/client_run.sh", "w", newline='\n') as f:
-    f.write(client_run)
+    with open(tmp_shell_preffix + "/client_run.sh", "w", newline='\n') as f:
+        f.write(client_run)
 
 # run shell order
 order_list = [
@@ -142,15 +143,15 @@ while run_seq < run_times:
     print("--restart docker--")
     os.system("docker restart %s %s" % (container_server_name, container_client_name))
     time.sleep(5)
-    # get server ip
+    # get server ip after restart docker
     if not server_ip:
         out = os.popen("docker inspect %s" % (container_server_name)).read()
         out_dt = json.loads(out)
         server_ip = out_dt[0]["NetworkSettings"]["IPAddress"] 
 
+    prepare_shell_code()
     for idx, order in enumerate(order_list):
-        if enable_print:
-            print(idx, " ", order)
+        print(idx, " ", order)
         os.system(order)
 
     # ensure server established succussfully
