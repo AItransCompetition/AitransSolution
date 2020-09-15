@@ -34,7 +34,7 @@ parser.add_argument('--solution_files', type=str, default=None, help="the path o
 
 parser.add_argument('--run_times', type=int, default=1, help="The times that you want run repeatly")
 
-parser.add_argument('--enable_print', type=bool, default=True, help="Whether or not print information of processing")
+parser.add_argument('--enable_print', type=bool, default=False, help="Whether or not print information of processing")
 
 # parse argument
 params                = parser.parse_args()
@@ -78,12 +78,8 @@ if solution_files:
         raise ValueError("There is no solution.cxx in your solution path : %s" % (cur_path + solution_files))
     if not "solution.hxx" in tmp:
         raise ValueError("There is no solution.hxx in your solution path : %s" % (cur_path + solution_files))
-
-# get server ip
-if not server_ip:
-    out = os.popen("docker inspect %s" % (container_server_name)).read()
-    out_dt = json.loads(out)
-    server_ip = out_dt[0]["NetworkSettings"]["IPAddress"] 
+    # if upload files that already finished compile
+    compile_preffix = '#' if "libsolution.so" in tmp else ''
 
 # init trace
 if block_trace:
@@ -107,8 +103,8 @@ rm client.log > tmp.log 2>&1
 server_run = '''
 #!/bin/bash
 cd {2}demo
-rm libsolution.so ../lib/libsolution.so
-g++ -shared -fPIC solution.cxx -I include -o libsolution.so > compile.log 2>&1
+{5} rm libsolution.so ../lib/libsolution.so
+{5} g++ -shared -fPIC solution.cxx -I include -o libsolution.so > compile.log 2>&1
 cp libsolution.so ../lib
 
 # check port
@@ -121,7 +117,7 @@ cd {2}
 rm log/server_aitrans.log 
 {3} python3 traffic_control.py -aft 0.1 -load trace/traces.txt > tc.log 2>&1 &
 LD_LIBRARY_PATH=./lib ./bin/server {0} {1} trace/block_trace/aitrans_block.txt &> ./log/server_aitrans.log &
-'''.format(server_ip, port, docker_run_path, tc_preffix, port)
+'''.format(server_ip, port, docker_run_path, tc_preffix, port, compile_preffix)
 
 with open(tmp_shell_preffix + "/server_run.sh", "w", newline='\n')  as f:
     f.write(server_run)
@@ -146,6 +142,11 @@ while run_seq < run_times:
     print("--restart docker--")
     os.system("docker restart %s %s" % (container_server_name, container_client_name))
     time.sleep(5)
+    # get server ip
+    if not server_ip:
+        out = os.popen("docker inspect %s" % (container_server_name)).read()
+        out_dt = json.loads(out)
+        server_ip = out_dt[0]["NetworkSettings"]["IPAddress"] 
 
     for idx, order in enumerate(order_list):
         if enable_print:
@@ -171,7 +172,6 @@ while run_seq < run_times:
         f.write(stop_server)
 
     if enable_print: print("stop server")
-    # os.system("chmod +x %s/stop_server.sh" %(tmp_shell_preffix))
     os.system(order_preffix + " docker cp %s/stop_server.sh " %(tmp_shell_preffix) + container_server_name + ":%s" % (docker_run_path))
     os.system(order_preffix + " docker exec -it " + container_server_name + "  /bin/bash %sstop_server.sh" % (docker_run_path))
     # move logs
@@ -181,12 +181,16 @@ while run_seq < run_times:
     if network_trace:
         os.system(order_preffix + " docker cp " + container_client_name + ":%stc.log %s/client_tc.log" % (docker_run_path, logs_preffix))
         os.system(order_preffix + " docker cp " + container_server_name + ":%stc.log %s/server_tc.log" % (docker_run_path, logs_preffix))
+    # move .so file
+    os.system(order_preffix + " docker cp " + container_server_name + ":%slib/libsolution.so %s/." % (docker_run_path, logs_preffix))
 
     # cal qoe
     now_qoe = cal_single_block_qoe("%s/client.log" % (logs_preffix), 0.9)
+    # rerun main.py if server fail to start
     with open("%s/client.log" % (logs_preffix), 'r') as f:
         if len(f.readlines()) <= 5:
-            print("server run fail, begin restart!")
+            if enable_print:
+                print("server run fail, begin restart!")
             continue
     qoe_sample.append(now_qoe)
     print("qoe : ", now_qoe)
