@@ -54,6 +54,7 @@ enable_print          = params.enable_print
 order_preffix = " " if "windows" in platform.system().lower() else "sudo "
 tc_preffix = "" if network_trace else "# "
 cur_path = os.getcwd() + '/'
+compile_preffix = ''
 
 # move shell scripts to tmp directory
 tmp_shell_preffix = "./tmp"
@@ -95,8 +96,9 @@ def prepare_shell_code():
     client_run = '''
     #!/bin/bash
     cd {0}
-    rm client.log > tmp.log 2>&1
     {3} python3 traffic_control.py -load trace/traces.txt > tc.log 2>&1 &
+    rm client.log > tmp.log 2>&1
+    sleep 0.2
     ./client --no-verify http://{1}:{2}
     {3} python3 traffic_control.py --reset eth0
     '''.format(docker_run_path, server_ip, port, tc_preffix)
