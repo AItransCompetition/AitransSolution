@@ -106,11 +106,13 @@ def prepare_shell_code():
     server_run = '''
     #!/bin/bash
     cd {2}
-    {3} python3 traffic_control.py -aft 3.1 -load trace/traces.txt > tc.log 2>&1 &
+    {3} python3 traffic_control.py -aft 5.1 -load trace/traces.txt > tc.log 2>&1 &
 
     cd {2}demo
-    # todo: add cmake
+    rm libsolution.so
+    ./make.sh &> compile.log
     cp libsolution.so ../lib
+    cp *.py ..
 
     # check port
     a=`lsof -i:{4} | awk '/server/ {{print$2}}'`
@@ -158,7 +160,7 @@ while run_seq < run_times:
         os.system(order)
 
     # ensure server established succussfully
-    time.sleep(3)
+    time.sleep(5)
     print("run client")
     os.system(order_preffix + " docker exec -it " + container_client_name + "  /bin/bash %sclient_run.sh" % (docker_run_path))
     # ensure connection closed

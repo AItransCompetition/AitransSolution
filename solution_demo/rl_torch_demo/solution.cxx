@@ -41,16 +41,16 @@ void SolutionInit(uint64_t *init_congestion_window, uint64_t *init_pacing_rate)
     your_parameter["MAX_BANDWITH"] = 100*8*1024*1024;
 
     // call python
-    // cout << "python result : " << get_number_res_from_order("python3 ./demo/hello_python3.py 1 1 999") << endl;
+    // cout << "python result : " << get_number_res_from_order("python3 hello_python3.py 1 1 999") << endl;
 
-    cout << "python3 ./demo/demo_rl_torch.py 0" << endl;
-    system("python3 ./demo/demo_rl_torch.py 0");
+    cout << "python3 demo_rl_torch.py 0" << endl;
+    system("python3 demo_rl_torch.py 0");
     // init model
-    cout << "python3 ./demo/demo_rl_torch.py 1 ./demo/dqn.pkl" << endl;
-    system("python3 ./demo/demo_rl_torch.py 1 ./demo/dqn.pkl");
+    cout << "python3 demo_rl_torch.py 1 dqn.pkl" << endl;
+    system("python3 demo_rl_torch.py 1 dqn.pkl");
 
     *init_pacing_rate = 100*1350*8;
-    *init_congestion_window = INFINITY;
+    *init_congestion_window = 100000000000000;
 }
 
 uint64_t SolutionSelectBlock(Block* blocks, uint64_t block_num, uint64_t next_packet_id, uint64_t current_time)
@@ -101,7 +101,7 @@ void SolutionCcTrigger(CcInfo *cc_infos, uint64_t cc_num, uint64_t *congestion_w
             
     }
     // learn and save
-    string order = "python3 ./demo/demo_rl_torch.py 2 ./demo/dqn.pkl ";
+    string order = "python3 demo_rl_torch.py 2 dqn.pkl ";
     order.append(ip_1);
     order.append(" ");
     order.append(ip_2);
@@ -116,7 +116,7 @@ void SolutionCcTrigger(CcInfo *cc_infos, uint64_t cc_num, uint64_t *congestion_w
     try
     {
         // Deserialize the ScriptModule from a file using torch::jit::load().
-        module = torch::jit::load("./demo/eval_net.pt");
+        module = torch::jit::load("eval_net.pt");
         // Create a vector of inputs.
         std::vector<torch::jit::IValue> inputs;
         vector<double> net_input;
