@@ -1,4 +1,4 @@
-使用前建议先熟悉[系统与python交互](https://github.com/AItransCompetition/AitransSolution/tree/master/solution_demo/call_python)和[系统使用libtorch](https://github.com/AItransCompetition/AitransSolution/tree/master/solution_demo/rl_torch_demo)这两个教程，并本地上传好下载的libtorch库和通过如下命令在服务端容器安装好pytorch。
+使用前建议先熟悉[系统与python交互](https://github.com/AItransCompetition/AitransSolution/tree/master/solution_demo/call_python)和[系统使用libtorch](https://github.com/AItransCompetition/AitransSolution/tree/master/solution_demo/call_torch_model)这两个教程，并本地上传好下载的libtorch库和通过如下命令在服务端容器安装好pytorch。
 
 > pip3 install torch==1.6.0+cpu torchvision==0.7.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 
