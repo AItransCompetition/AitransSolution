@@ -109,8 +109,7 @@ def prepare_shell_code():
     {3} python3 traffic_control.py -aft 3.1 -load trace/traces.txt > tc.log 2>&1 &
 
     cd {2}demo
-    {5} rm libsolution.so ../lib/libsolution.so
-    {5} g++ -shared -fPIC solution.cxx -I include -o libsolution.so > compile.log 2>&1
+    # todo: add cmake
     cp libsolution.so ../lib
 
     # check port
