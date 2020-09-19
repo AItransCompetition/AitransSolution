@@ -41,16 +41,16 @@ void SolutionInit(uint64_t *init_congestion_window, uint64_t *init_pacing_rate)
     your_parameter["MAX_BANDWITH"] = 100*8*1024*1024;
 
     // call python
-    // cout << "python result : " << get_number_res_from_order("python3 hello_python3.py 1 1 999") << endl;
+    // cout << "python result : " << get_number_res_from_order("python3 ./demo/hello_python3.py 1 1 999") << endl;
 
-    cout << "python3 demo_rl_torch.py 0" << endl;
-    system("python3 demo_rl_torch.py 0");
+    cout << "python3 ./demo/demo_rl_torch.py 0" << endl;
+    system("python3 ./demo/demo_rl_torch.py 0");
     // init model
-    cout << "python3 demo_rl_torch.py 1 dqn.pkl" << endl;
-    system("python3 demo_rl_torch.py 1 dqn.pkl");
+    cout << "python3 ./demo/demo_rl_torch.py 1 ./demo/dqn.pkl" << endl;
+    system("python3 ./demo/demo_rl_torch.py 1 ./demo/dqn.pkl");
 
     *init_pacing_rate = 100*1350*8;
-    *init_congestion_window = 100000000000000;
+    *init_congestion_window = 12345678;
 }
 
 uint64_t SolutionSelectBlock(Block* blocks, uint64_t block_num, uint64_t next_packet_id, uint64_t current_time)
@@ -68,7 +68,7 @@ uint64_t SolutionSelectBlock(Block* blocks, uint64_t block_num, uint64_t next_pa
 void SolutionCcTrigger(CcInfo *cc_infos, uint64_t cc_num, uint64_t *congestion_window, uint64_t *pacing_rate)
 {
     /************** START CODE HERE ***************/
-    // uint64_t cwnd = *congestion_window;
+    uint64_t cwnd = *congestion_window;
     vector<int> cc_types, rtt_sample;
     double loss_nums = 0, rtt_sum = 0;
     for (uint64_t i = 0; i < cc_num; i++)
@@ -101,7 +101,7 @@ void SolutionCcTrigger(CcInfo *cc_infos, uint64_t cc_num, uint64_t *congestion_w
             
     }
     // learn and save
-    string order = "python3 demo_rl_torch.py 2 dqn.pkl ";
+    string order = "python3 ./demo/demo_rl_torch.py 2 ./demo/dqn.pkl ";
     order.append(ip_1);
     order.append(" ");
     order.append(ip_2);
@@ -112,11 +112,12 @@ void SolutionCcTrigger(CcInfo *cc_infos, uint64_t cc_num, uint64_t *congestion_w
     *pacing_rate = get_number_res_from_order((char *)order.data());
 
     // call torch model when submit model to system
+    /*
     torch::jit::script::Module module;
     try
     {
         // Deserialize the ScriptModule from a file using torch::jit::load().
-        module = torch::jit::load("eval_net.pt");
+        module = torch::jit::load("./demo/eval_net.pt");
         // Create a vector of inputs.
         std::vector<torch::jit::IValue> inputs;
         vector<double> net_input;
@@ -156,6 +157,7 @@ void SolutionCcTrigger(CcInfo *cc_infos, uint64_t cc_num, uint64_t *congestion_w
         std::cout << e.msg() <<  endl;
         std::cerr << "error loading the model\n";
     }
+    */
     std::cout << "ok\n";
     std::cout << *pacing_rate << std::endl;
     // fprintf(stderr,"new cwnd: %lu, ssthresh = %lu\n", cwnd, your_parameter["ssthresh"]);
